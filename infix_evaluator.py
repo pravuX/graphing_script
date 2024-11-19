@@ -4,36 +4,59 @@ import re
 
 
 def _tokenize(expression):
-    """ tokenize the input expression into numbers, and operators. """
-    # replace unary minus as in -n with (0 - n)
-    # uses a negative lookahead to match unary minus:
-    # unary minus doesnot have an operand or ) preceeding the - sign
-    # n in -n can be an integer like 2 or decimal like 2.0
-    expression = re.sub(r'(?<![\d)])-(\d+\.?\d*)', r'(0-\1)', expression)
-
+    """ Tokenize the input expression into numbers, and operators. """
+    # Converts all unary minuses into u-
+    expression = re.sub(r'^-', r'u-', expression)
+    expression = re.sub(r'([+\*/^(])-', r'\1u-', expression)
+    expression = re.sub(r'u--', r'u-u-', expression)
     tokens = re.findall(
-        r'\d+\.\d+|\d+|[+\-*/^()]|sin|cos|tan|log|e', expression)
+        r'\d*\.?\d+|[+\-*/^()]|sin|cos|tan|log|e|u-', expression)
     return tokens
 
 
-def _has_greater_precedence(op1, op2):
-    """ true if op1 has greater or equal precedence than op2"""
+def _compare_precedence(op1, op2, comparison):
+    """ Returns the truth value of the specified comparison between two given operators"""
     precedence = {
-        "+": 0,
-        "-": 0,
-        "*": 1,
-        "/": 1,
-        "^": 2,
-        "sin": 3,
-        "cos": 3,
-        "tan": 3,
-        "log": 3,
-        "e": 3,
-        "(": 4,
+        "(": 0,
+        "+": 1,
+        "-": 1,
+        "*": 2,
+        "/": 2,
+        "u-": 3,
+        "^": 4,
+        "sin": 5,
+        "cos": 5,
+        "tan": 5,
+        "log": 5,
+        "e": 5,
     }
     op1_precedence = precedence[op1]
     op2_precedence = precedence[op2]
-    return op1_precedence >= op2_precedence
+    if comparison == "<=":
+        return op1_precedence <= op2_precedence
+    if comparison == ">=":
+        return op1_precedence >= op2_precedence
+    if comparison == "<":
+        return op1_precedence < op2_precedence
+    if comparison == ">":
+        return op1_precedence > op2_precedence
+
+
+def _associativity_of(operator):
+    associativity = {
+        "+": "L",
+        "-": "L",
+        "*": "L",
+        "/": "L",
+        "sin": "R",
+        "cos": "R",
+        "tan": "R",
+        "log": "R",
+        "e": "R",
+        "u-": "R",
+        "^": "R",
+    }
+    return associativity[operator]
 
 
 def _permform_op(op, x, y):
@@ -57,56 +80,64 @@ def _permform_op(op, x, y):
         return log(y)
     elif op == "e":
         return e(y)
+    elif op == "u-":
+        return -1 * y
     return None
 
 
-def evaulate_infix(expression):
-    operand = list()
-    operator = list()
+def infix_to_postfix(expression):
+    operators = list()
+    postfix = list()
     tokens = _tokenize(expression)
     for token in tokens:
-        if operator:
-            top_operator = operator[-1]
-        if re.search(r"\d+\.\d+|\d+", token):  # decimals or multidigit numbers
-            # match operands
-            token = float(token)
-            operand.append(token)
-        elif token == "(":
-            # match operators
-            operator.append(token)
-        elif re.search(r"[+\-*\^/]|sin|cos|tan|log|e", token):
+        if re.search(r"[+\-*\^/]|sin|cos|tan|log|e|u-", token):
             this_operator = token
-            # TODO: separate this while block that is repeated three times into a helper function evaulate_infix_process()
-            while operator and top_operator != "(" and _has_greater_precedence(top_operator, this_operator):
-                top_operator = operator.pop()
-                y = operand.pop()  # operand 2
-                x = 0
-                if not re.search(r"sin|cos|tan|log|e", top_operator):
-                    x = operand.pop()  # operand 1
-                result = _permform_op(top_operator, x, y)
-                operand.append(result)
-            operator.append(this_operator)
+            if operators:
+                top_operator = operators[-1]
+                while top_operator and (_associativity_of(this_operator) == "L" and _compare_precedence(this_operator, top_operator, "<=")) or (_associativity_of(this_operator) == "R" and _compare_precedence(this_operator, top_operator, "<")):
+                    top_operator = operators.pop()
+                    postfix.append(top_operator)
+                    try:
+                        top_operator = operators[-1]
+                    except:
+                        top_operator = None
+            operators.append(this_operator)
+        elif token == "(":
+            operators.append(token)
         elif token == ")":
-            while (1):
-                top_operator = operator.pop()
-                if (top_operator == "("):
-                    break
-                y = operand.pop()  # operand 2
-                x = 0
-                if not re.search(r"sin|cos|tan|log|e", top_operator):
-                    x = operand.pop()  # operand 1
-                result = _permform_op(top_operator, x, y)
-                operand.append(result)
-    while (operator):
-        top_operator = operator.pop()
-        y = operand.pop()  # operand 2
-        x = 0
-        if not re.search(r"sin|cos|tan|log|e", top_operator):
-            x = operand.pop()  # operand 1
-        result = _permform_op(top_operator, x, y)
-        operand.append(result)
-    return operand[-1]
+            if operators:
+                top_operator = operators.pop()
+                while (top_operator != "("):
+                    postfix.append(top_operator)
+                    top_operator = operators.pop()
+        else:
+            postfix.append(token)
+
+    while operators:
+        postfix.append(operators.pop())
+    return " ".join(postfix)
 
 
-if __name__ == "__main__":
-    print(_tokenize("e(10)"))
+def evaulate_infix(expression):
+    expression = infix_to_postfix(expression)
+    return evaulate_postfix(expression)
+
+
+def evaulate_postfix(expression):
+    stack = list()
+    tokens = _tokenize(expression)
+    for token in tokens:
+        if re.search(r"\d*\.?\d+", token):  # decimals or multidigit numbers
+            token = float(token)
+            stack.append(token)
+        else:
+            x = 0
+            if re.search(r"sin|cos|tan|log|e|u-", token):
+                y = stack.pop()
+            elif re.search(r"[+\-*\^/]", token):
+                y = stack.pop()
+                x = stack.pop()
+            result = _permform_op(token, x, y)
+            stack.append(result)
+
+    return stack[-1]
