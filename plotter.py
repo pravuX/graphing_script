@@ -18,7 +18,7 @@ def plot_graph(inputs, outputs):
 
     ax.set_xlabel("x", loc="right")
     ax.set_ylabel("f(x)", loc="top")
-    ax.set_xlim(-10, 10)
-    ax.set_ylim(-10, 10)
+    ax.set_xlim(-50, 50)
+    ax.set_ylim(-5, 5)
 
     plt.show()

@@ -4,17 +4,17 @@ from infix_evaluator import evaulate_infix
 
 
 def prompt():
-    print("Enter an expression(Ctrl+C to exit).")
     expression = input("f(x) = ")
-    expression.replace(" ", "").lower().replace("exp", "e")
+    expression = expression.replace(" ", "").lower().replace("exp", "e")
     return expression
 
 
 def main():
+    print("Enter an expression(Ctrl+C to exit).")
     try:
         while True:
             expression = prompt()
-            inputs = np.linspace(-10, 10, 100)
+            inputs = np.linspace(-100, 100, 1000)
             outputs = [evaulate_infix(expression.replace(
                 "x", str(num))) for num in inputs]
 

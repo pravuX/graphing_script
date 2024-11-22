@@ -60,7 +60,8 @@ def _associativity_of(operator):
 
 
 def _permform_op(op, x, y):
-    if x == None or y == None: return None
+    if x == None or y == None:
+        return None
     if op == "+":
         return x + y
     elif op == "-":
