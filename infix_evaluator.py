@@ -16,7 +16,13 @@ def _tokenize(expression):
 
 def _compare_precedence(op1, op2, comparison):
     """ Returns the truth value of the specified comparison between two given operators"""
+    # THIS IS GARBAGE. NEEDS TO BE REFACTORED!
+    if op1 == None:
+        op1 = "None"
+    if op2 == None:
+        op2 = "None"
     precedence = {
+        "None": -1,
         "(": 0,
         "+": 1,
         "-": 1,
