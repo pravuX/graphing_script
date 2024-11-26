@@ -10,7 +10,7 @@ def _tokenize(expression):
     expression = re.sub(r'([+\*/^(])-', r'\1u-', expression)
     expression = re.sub(r'u--', r'u-u-', expression)
     tokens = re.findall(
-        r'\d*\.?\d+|[+\-*/^()]|sin|cos|tan|log|e|u-', expression)
+        r'\d*\.?\d+|[+\-*/^()]|sin|cos|tan|log|e|u-|x', expression)
     return tokens
 
 
@@ -71,7 +71,7 @@ def _permform_op(op, x, y):
     elif op == "/" and y != 0:
         return x / y
     elif op == "^":
-        return x ** y
+        return x ** y 
     elif op == "sin":
         return sin(y)
     elif op == "cos":
@@ -120,26 +120,46 @@ def infix_to_postfix(expression):
     return " ".join(postfix)
 
 
-def evaulate_infix(expression):
+def evaulate_infix(expression,num):
     expression = infix_to_postfix(expression)
-    return evaulate_postfix(expression)
+    return evaulate_postfix(expression,num)
 
 
-def evaulate_postfix(expression):
+def evaulate_postfix(expression,num):
     stack = list()
     tokens = _tokenize(expression)
     for token in tokens:
-        if re.search(r"\d*\.?\d+", token):  # decimals or multidigit numbers
-            token = float(token)
+        if re.search(r"\d*\.?\d+|x", token):  # decimals or multidigit numbers
+
+            if token !="x":
+                token = float(token)
+
+            if token == "x":
+                token=num
+
             stack.append(token)
         else:
+            y=0
             x = 0
             if re.search(r"sin|cos|tan|log|e|u-", token):
                 y = stack.pop()
+                
+
             elif re.search(r"[+\-*\^/]", token):
                 y = stack.pop()
+
+
                 x = stack.pop()
+
+
             result = _permform_op(token, x, y)
             stack.append(result)
+        
 
     return stack[-1]
+
+
+evaulate_infix("-2^x",-2)
+
+
+

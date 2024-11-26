@@ -14,9 +14,8 @@ def main():
     try:
         while True:
             expression = prompt()
-            inputs = np.linspace(-100, 100, 1000)
-            outputs = [evaulate_infix(expression.replace(
-                "x", str(num))) for num in inputs]
+            inputs = np.linspace(-100, 100, 100)
+            outputs = [evaulate_infix(expression,num) for num in inputs]
 
             valid_inputs = [inputs[i]
                             for i, y in enumerate(outputs) if y is not None]
