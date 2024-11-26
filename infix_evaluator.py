@@ -71,7 +71,7 @@ def _permform_op(op, x, y):
     elif op == "/" and y != 0:
         return x / y
     elif op == "^":
-        return x ** y 
+        return x ** y
     elif op == "sin":
         return sin(y)
     elif op == "cos":
@@ -159,7 +159,7 @@ def evaulate_postfix(expression,num):
     return stack[-1]
 
 
-evaulate_infix("-2^x",-2)
+
 
 
 
